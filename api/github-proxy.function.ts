@@ -2,9 +2,7 @@ const ALLOWED_HOSTS = ['api.github.com', 'raw.githubusercontent.com'];
 
 export default async function handler(request: Request): Promise<Response> {
   try {
-    const qIdx = request.url.indexOf('?');
-    const searchParams = new URLSearchParams(qIdx >= 0 ? request.url.slice(qIdx + 1) : '');
-    const targetUrl = searchParams.get('url') ?? '';
+    const { url: targetUrl, pat: token } = await request.json() as { url: string; pat?: string | null };
 
     let parsed: URL;
     try {
@@ -17,7 +15,6 @@ export default async function handler(request: Request): Promise<Response> {
       return new Response('Forbidden: host not allowed', { status: 403 });
     }
 
-    const token = request.headers.get('X-GitHub-Token');
     const fetchHeaders: HeadersInit = {
       Accept: 'application/vnd.github.v3+json',
       'User-Agent': 'DT-Community-Assets/1.0',

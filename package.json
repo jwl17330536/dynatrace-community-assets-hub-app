@@ -1,6 +1,6 @@
 {
   "name": "dynatrace-community-assets-hub-app",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Browse and import community dashboards and workflows from GitHub repos into Dynatrace",
   "scripts": {
     "build": "dt-app build",

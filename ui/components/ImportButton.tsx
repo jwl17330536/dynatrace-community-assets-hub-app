@@ -11,8 +11,11 @@ interface ImportButtonProps {
 type State = 'idle' | 'loading' | 'success' | 'error';
 
 async function importDashboard(downloadUrl: string, name: string, pat?: string): Promise<void> {
-  const headers: HeadersInit = pat ? { 'X-GitHub-Token': pat } : {};
-  const ghRes = await fetch(`/api/github-proxy?url=${encodeURIComponent(downloadUrl)}`, { headers });
+  const ghRes = await fetch('/api/github-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: downloadUrl, pat: pat || null }),
+  });
   if (!ghRes.ok) throw new Error(`Failed to fetch from GitHub: ${ghRes.status}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = await ghRes.json();

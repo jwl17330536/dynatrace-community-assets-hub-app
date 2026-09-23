@@ -13,11 +13,17 @@ interface GHEntry {
 }
 
 async function ghFetch<T>(url: string, pat?: string): Promise<T> {
-  const proxyUrl = `/api/github-proxy?url=${encodeURIComponent(url)}`;
-  const headers: HeadersInit = pat ? { 'X-GitHub-Token': pat } : {};
-  const res = await fetch(proxyUrl, { headers });
+  const res = await fetch('/api/github-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, pat: pat || null }),
+  });
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${url}`);
-  return res.json() as Promise<T>;
+  const data = await res.json() as unknown;
+  if (!Array.isArray(data) && typeof data === 'object' && data !== null && 'message' in data) {
+    throw new Error(`GitHub API error: ${(data as { message: string }).message}`);
+  }
+  return data as T;
 }
 
 function decodeBase64(encoded: string): string {
