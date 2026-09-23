@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flex, Button, Text } from '@dynatrace/strato-components';
-import { useRepoConfig } from '../hooks/useRepoConfig';
+import { useRepoConfig, useGitHubPat } from '../hooks/useRepoConfig';
 import { useGitHubCatalog } from '../hooks/useGitHubCatalog';
 import { CatalogCard } from '../components/CatalogCard';
+
+const APP_VERSION = '0.1.3';
 
 type TypeFilter = 'all' | 'dashboard' | 'workflow';
 
 export function Catalog() {
   const navigate = useNavigate();
   const { repos } = useRepoConfig();
-  const { items, loading, error, refresh } = useGitHubCatalog(repos);
+  const { pat } = useGitHubPat();
+  const { items, loading, error, refresh } = useGitHubCatalog(repos, pat);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
@@ -35,7 +38,10 @@ export function Catalog() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       <Flex justifyContent="space-between" alignItems="center" style={{ marginBottom: '20px' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>DT Community Assets</h1>
+        <Flex alignItems="baseline" gap={8}>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>DT Community Assets</h1>
+          <span style={{ fontSize: '11px', opacity: 0.4, fontFamily: 'monospace' }}>v{APP_VERSION}</span>
+        </Flex>
         <Flex gap={8}>
           <Button variant="default" onClick={refresh} disabled={loading}>
             Refresh

@@ -17,13 +17,23 @@ export default async function handler(request: Request): Promise<Response> {
     return new Response('Forbidden: host not allowed', { status: 403 });
   }
 
+  const token = request.headers.get('X-GitHub-Token');
+  const fetchHeaders: HeadersInit = {
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'DT-Community-Assets/1.0',
+  };
+  if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+
   let ghRes: Response;
   try {
-    ghRes = await fetch(targetUrl, {
-      headers: { Accept: 'application/vnd.github.v3+json' },
-    });
+    ghRes = await fetch(targetUrl, { headers: fetchHeaders, signal: controller.signal });
   } catch (err) {
     return new Response(`Upstream fetch failed: ${String(err)}`, { status: 502 });
+  } finally {
+    clearTimeout(timer);
   }
 
   const body = await ghRes.text();

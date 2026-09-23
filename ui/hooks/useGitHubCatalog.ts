@@ -12,9 +12,10 @@ interface GHEntry {
   encoding?: string;
 }
 
-async function ghFetch<T>(url: string): Promise<T> {
+async function ghFetch<T>(url: string, pat?: string): Promise<T> {
   const proxyUrl = `/api/github-proxy?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxyUrl);
+  const headers: HeadersInit = pat ? { 'X-GitHub-Token': pat } : {};
+  const res = await fetch(proxyUrl, { headers });
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${url}`);
   return res.json() as Promise<T>;
 }
@@ -30,10 +31,11 @@ function toDisplayName(folder: string): string {
     .join(' ');
 }
 
-async function fetchRepoItems(config: RepoConfig): Promise<CatalogItem[]> {
+async function fetchRepoItems(config: RepoConfig, pat?: string): Promise<CatalogItem[]> {
   const { owner, repo, branch } = config;
   const rootEntries = await ghFetch<GHEntry[]>(
-    `${GH_API}/repos/${owner}/${repo}/contents?ref=${branch}`
+    `${GH_API}/repos/${owner}/${repo}/contents?ref=${branch}`,
+    pat
   );
 
   const folders = rootEntries.filter(
@@ -43,7 +45,8 @@ async function fetchRepoItems(config: RepoConfig): Promise<CatalogItem[]> {
   const results = await Promise.allSettled(
     folders.map(async folder => {
       const entries = await ghFetch<GHEntry[]>(
-        `${GH_API}/repos/${owner}/${repo}/contents/${folder.path}?ref=${branch}`
+        `${GH_API}/repos/${owner}/${repo}/contents/${folder.path}?ref=${branch}`,
+        pat
       );
 
       const artifacts: ArtifactFile[] = [];
@@ -84,7 +87,7 @@ async function fetchRepoItems(config: RepoConfig): Promise<CatalogItem[]> {
   return items;
 }
 
-export function useGitHubCatalog(repos: RepoConfig[]) {
+export function useGitHubCatalog(repos: RepoConfig[], pat?: string) {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +105,7 @@ export function useGitHubCatalog(repos: RepoConfig[]) {
     setLoading(true);
     setError(null);
 
-    Promise.all(repos.map(fetchRepoItems))
+    Promise.all(repos.map(r => fetchRepoItems(r, pat)))
       .then(results => {
         if (!cancelled) {
           setItems(results.flat());
@@ -118,7 +121,7 @@ export function useGitHubCatalog(repos: RepoConfig[]) {
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reposKey, refreshKey]);
+  }, [reposKey, refreshKey, pat]);
 
   return { items, loading, error, refresh: () => setRefreshKey(k => k + 1) };
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flex, Button, Text, Surface } from '@dynatrace/strato-components';
-import { useRepoConfig } from '../hooks/useRepoConfig';
+import { useRepoConfig, useGitHubPat } from '../hooks/useRepoConfig';
 import { RepoConfig } from '../types';
 
 function isValidRepoSlug(s: string): boolean {
@@ -11,6 +11,9 @@ function isValidRepoSlug(s: string): boolean {
 export function Settings() {
   const navigate = useNavigate();
   const { repos, addRepo, removeRepo } = useRepoConfig();
+  const { pat, savePat, clearPat } = useGitHubPat();
+  const [patInput, setPatInput] = useState(pat);
+  const [patSaved, setPatSaved] = useState(false);
   const [repoSlug, setRepoSlug] = useState('');
   const [label, setLabel] = useState('');
   const [branch, setBranch] = useState('main');
@@ -124,6 +127,45 @@ export function Settings() {
               Add Repo
             </Button>
           </div>
+        </Flex>
+      </Surface>
+
+      <Surface style={{ padding: '20px', marginBottom: '24px' }}>
+        <h2 style={{ marginTop: 0, fontSize: '16px' }}>GitHub Personal Access Token</h2>
+        <Text textStyle="small" style={{ opacity: 0.6, display: 'block', marginBottom: '12px' }}>
+          Required for the DT AppEngine proxy to reach api.github.com. Create a classic PAT with{' '}
+          <code>public_repo</code> (read) scope at{' '}
+          <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+            github.com/settings/tokens
+          </a>
+          .
+        </Text>
+        <Flex gap={8} alignItems="center">
+          <input
+            type="password"
+            placeholder="ghp_…"
+            value={patInput}
+            onChange={e => { setPatInput(e.target.value); setPatSaved(false); }}
+            style={{ ...inputStyle, width: '320px' }}
+          />
+          <Button
+            variant="emphasized"
+            onClick={() => { savePat(patInput.trim()); setPatSaved(true); }}
+            disabled={patInput.trim() === pat}
+          >
+            Save
+          </Button>
+          {pat && (
+            <Button
+              variant="default"
+              onClick={() => { clearPat(); setPatInput(''); setPatSaved(false); }}
+            >
+              Clear
+            </Button>
+          )}
+          {patSaved && (
+            <Text textStyle="small" style={{ color: '#27ae60' }}>Saved</Text>
+          )}
         </Flex>
       </Surface>
 

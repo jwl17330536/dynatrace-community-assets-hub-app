@@ -5,12 +5,14 @@ import { ArtifactFile } from '../types';
 interface ImportButtonProps {
   artifact: ArtifactFile;
   itemName: string;
+  pat?: string;
 }
 
 type State = 'idle' | 'loading' | 'success' | 'error';
 
-async function importDashboard(downloadUrl: string, name: string): Promise<void> {
-  const ghRes = await fetch(`/api/github-proxy?url=${encodeURIComponent(downloadUrl)}`);
+async function importDashboard(downloadUrl: string, name: string, pat?: string): Promise<void> {
+  const headers: HeadersInit = pat ? { 'X-GitHub-Token': pat } : {};
+  const ghRes = await fetch(`/api/github-proxy?url=${encodeURIComponent(downloadUrl)}`, { headers });
   if (!ghRes.ok) throw new Error(`Failed to fetch from GitHub: ${ghRes.status}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = await ghRes.json();
@@ -36,7 +38,7 @@ async function importDashboard(downloadUrl: string, name: string): Promise<void>
 }
 
 
-export function ImportButton({ artifact, itemName }: ImportButtonProps) {
+export function ImportButton({ artifact, itemName, pat }: ImportButtonProps) {
   const [state, setState] = useState<State>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -66,7 +68,7 @@ export function ImportButton({ artifact, itemName }: ImportButtonProps) {
     setState('loading');
     setErrorMsg('');
     try {
-      await importDashboard(artifact.downloadUrl, itemName);
+      await importDashboard(artifact.downloadUrl, itemName, pat);
       setState('success');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');

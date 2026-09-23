@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { RepoConfig } from '../types';
 
 const STORAGE_KEY = 'repo-catalog.repos';
+const PAT_KEY = 'repo-catalog.github-pat';
 
 function load(): RepoConfig[] {
   try {
@@ -25,4 +26,20 @@ export function useRepoConfig() {
     setRepos(prev => prev.filter((_, i) => i !== index));
 
   return { repos, addRepo, removeRepo };
+}
+
+export function useGitHubPat() {
+  const [pat, setPat] = useState(() => localStorage.getItem(PAT_KEY) ?? '');
+
+  const savePat = (v: string) => {
+    localStorage.setItem(PAT_KEY, v);
+    setPat(v);
+  };
+
+  const clearPat = () => {
+    localStorage.removeItem(PAT_KEY);
+    setPat('');
+  };
+
+  return { pat, savePat, clearPat };
 }

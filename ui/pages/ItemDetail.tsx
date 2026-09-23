@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { Flex, Button, Text, Surface } from '@dynatrace/strato-components';
-import { useRepoConfig } from '../hooks/useRepoConfig';
+import { useRepoConfig, useGitHubPat } from '../hooks/useRepoConfig';
 import { useGitHubCatalog } from '../hooks/useGitHubCatalog';
 import { TypeBadge } from '../components/TypeBadge';
 import { ImportButton } from '../components/ImportButton';
@@ -10,7 +10,8 @@ export function ItemDetail() {
   const navigate = useNavigate();
   const { owner, repo, folder } = useParams<{ owner: string; repo: string; folder: string }>();
   const { repos } = useRepoConfig();
-  const { items, loading } = useGitHubCatalog(repos);
+  const { pat } = useGitHubPat();
+  const { items, loading } = useGitHubCatalog(repos, pat);
 
   const item = items.find(
     i =>
@@ -70,7 +71,7 @@ export function ItemDetail() {
               <Text textStyle="small" style={{ flexGrow: 1, fontFamily: 'monospace', opacity: 0.7 }}>
                 {a.name}
               </Text>
-              <ImportButton artifact={a} itemName={item.name} />
+              <ImportButton artifact={a} itemName={item.name} pat={pat} />
             </Flex>
           ))}
           {workflows.map(a => (
@@ -79,7 +80,7 @@ export function ItemDetail() {
               <Text textStyle="small" style={{ flexGrow: 1, fontFamily: 'monospace', opacity: 0.7 }}>
                 {a.name}
               </Text>
-              <ImportButton artifact={a} itemName={item.name} />
+              <ImportButton artifact={a} itemName={item.name} pat={pat} />
             </Flex>
           ))}
         </Flex>
