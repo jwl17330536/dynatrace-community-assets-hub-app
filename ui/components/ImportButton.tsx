@@ -35,43 +35,38 @@ async function importDashboard(downloadUrl: string, name: string): Promise<void>
   }
 }
 
-async function importWorkflow(downloadUrl: string): Promise<void> {
-  const ghRes = await fetch(downloadUrl);
-  if (!ghRes.ok) throw new Error(`Failed to fetch from GitHub: ${ghRes.status}`);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const json: any = await ghRes.json();
-
-  const { id: _i, owner: _o, isDeployed: _d, actor: _a, ...payload } = json;
-
-  const res = await fetch('/platform/automation/v1/workflows', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Import failed (${res.status}): ${text}`);
-  }
-}
 
 export function ImportButton({ artifact, itemName }: ImportButtonProps) {
   const [state, setState] = useState<State>('idle');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const label = artifact.type === 'dashboard'
-    ? `Import Dashboard`
-    : `Import Workflow`;
+  // Workflow import requires automation:workflows:write which is restricted to
+  // Dynatrace-provided apps. Show a download link instead.
+  if (artifact.type === 'workflow') {
+    return (
+      <a
+        href={artifact.downloadUrl}
+        download={artifact.name}
+        style={{
+          padding: '6px 12px',
+          borderRadius: '4px',
+          border: '1px solid #ccc',
+          fontSize: '13px',
+          textDecoration: 'none',
+          color: 'inherit',
+          display: 'inline-block',
+        }}
+      >
+        Download JSON
+      </a>
+    );
+  }
 
   const handleImport = async () => {
     setState('loading');
     setErrorMsg('');
     try {
-      if (artifact.type === 'dashboard') {
-        await importDashboard(artifact.downloadUrl, itemName);
-      } else {
-        await importWorkflow(artifact.downloadUrl);
-      }
+      await importDashboard(artifact.downloadUrl, itemName);
       setState('success');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
@@ -86,7 +81,7 @@ export function ImportButton({ artifact, itemName }: ImportButtonProps) {
         onClick={handleImport}
         disabled={state === 'loading' || state === 'success'}
       >
-        {state === 'loading' ? 'Importing…' : state === 'success' ? 'Imported' : label}
+        {state === 'loading' ? 'Importing…' : state === 'success' ? 'Imported' : 'Import Dashboard'}
       </Button>
       {state === 'error' && (
         <span style={{ fontSize: '12px', color: '#c0392b' }}>{errorMsg}</span>
