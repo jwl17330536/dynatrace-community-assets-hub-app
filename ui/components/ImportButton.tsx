@@ -10,7 +10,7 @@ interface ImportButtonProps {
 type State = 'idle' | 'loading' | 'success' | 'error';
 
 async function importDashboard(downloadUrl: string, name: string): Promise<void> {
-  const ghRes = await fetch(`/functions/github-proxy?url=${encodeURIComponent(downloadUrl)}`);
+  const ghRes = await fetch(`/api/github-proxy?url=${encodeURIComponent(downloadUrl)}`);
   if (!ghRes.ok) throw new Error(`Failed to fetch from GitHub: ${ghRes.status}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = await ghRes.json();

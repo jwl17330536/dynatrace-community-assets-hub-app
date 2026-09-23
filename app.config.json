@@ -4,7 +4,7 @@
   "build": { "sourceRoot": "." },
   "app": {
     "name": "DT Community Assets",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Browse and import dashboards and workflows from GitHub into Dynatrace",
     "id": "my.dt.community.assets",
     "scopes": [
