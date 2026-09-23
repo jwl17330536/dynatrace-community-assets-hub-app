@@ -5,7 +5,7 @@ import { useRepoConfig, useGitHubPat } from '../hooks/useRepoConfig';
 import { useGitHubCatalog } from '../hooks/useGitHubCatalog';
 import { CatalogCard } from '../components/CatalogCard';
 
-const APP_VERSION = '0.1.4';
+const APP_VERSION = '0.1.5';
 
 type TypeFilter = 'all' | 'dashboard' | 'workflow';
 

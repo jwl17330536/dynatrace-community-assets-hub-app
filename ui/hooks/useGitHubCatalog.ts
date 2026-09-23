@@ -13,9 +13,9 @@ interface GHEntry {
 }
 
 async function ghFetch<T>(url: string, pat?: string): Promise<T> {
-  const headers: HeadersInit = { Accept: 'application/vnd.github.v3+json' };
-  if (pat) headers['Authorization'] = `Bearer ${pat}`;
-  const res = await fetch(url, { headers });
+  const proxyUrl = `/api/github-proxy?url=${encodeURIComponent(url)}`;
+  const headers: HeadersInit = pat ? { 'X-GitHub-Token': pat } : {};
+  const res = await fetch(proxyUrl, { headers });
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${url}`);
   return res.json() as Promise<T>;
 }
