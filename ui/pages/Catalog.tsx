@@ -35,7 +35,7 @@ export function Catalog() {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       <Flex justifyContent="space-between" alignItems="center" style={{ marginBottom: '20px' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Repo Catalog</h1>
+        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>DT Community Assets</h1>
         <Flex gap={8}>
           <Button variant="default" onClick={refresh} disabled={loading}>
             Refresh

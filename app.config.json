@@ -3,10 +3,10 @@
   "environmentUrl": "https://oei3894h.sprint.apps.dynatracelabs.com/",
   "build": { "sourceRoot": "." },
   "app": {
-    "name": "Repo Catalog",
+    "name": "DT Community Assets",
     "version": "0.1.0",
-    "description": "Browse and import dashboards and workflows from GitHub repos into Dynatrace",
-    "id": "my.repo.catalog.hub.app",
+    "description": "Browse and import dashboards and workflows from GitHub into Dynatrace",
+    "id": "my.dt.community.assets",
     "scopes": [
       { "name": "document:documents:write", "comment": "Import dashboards into the tenant" },
       { "name": "document:documents:read", "comment": "Check for existing documents" }
