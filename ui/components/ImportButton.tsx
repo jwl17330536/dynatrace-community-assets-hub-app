@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@dynatrace/strato-components';
+import { documentsClient } from '@dynatrace-sdk/client-document';
 import { ArtifactFile } from '../types';
 
 interface ImportButtonProps {
@@ -19,25 +20,19 @@ async function importDashboard(downloadUrl: string, name: string, pat?: string):
   if (!ghRes.ok) throw new Error(`Failed to fetch from GitHub: ${ghRes.status}`);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = await ghRes.json();
+  if (json && typeof json === 'object' && '__proxy_error' in json) {
+    throw new Error(`Proxy: ${json.__proxy_error}`);
+  }
 
   const { owner: _o, isPrivate: _p, modificationInfo: _m, ...payload } = json;
 
-  const body = JSON.stringify({
-    type: 'dashboard',
-    name: (payload.name as string) || name,
-    content: JSON.stringify(payload),
+  await documentsClient.createDocument({
+    body: {
+      name: (payload.name as string) || name,
+      type: 'dashboard',
+      content: new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+    },
   });
-
-  const res = await fetch('/platform/document/v0/documents', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Import failed (${res.status}): ${text}`);
-  }
 }
 
 

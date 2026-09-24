@@ -9,13 +9,13 @@ interface CatalogCardProps {
 
 function readmeSummary(readme: string | undefined): string {
   if (!readme) return '';
-  const firstPara = readme
+  const text = readme
     .split('\n')
     .map(l => l.trim())
     .filter(l => l && !l.startsWith('#'))
-    .join(' ')
-    .slice(0, 160);
-  return firstPara || '';
+    .join(' ');
+  if (text.length <= 160) return text;
+  return text.slice(0, 157) + '…';
 }
 
 export function CatalogCard({ item, onClick }: CatalogCardProps) {

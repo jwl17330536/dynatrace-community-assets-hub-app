@@ -8,26 +8,58 @@ interface GHEntry {
   name: string;
   path: string;
   download_url: string | null;
-  content?: string;
-  encoding?: string;
 }
 
-async function ghFetch<T>(url: string, pat?: string): Promise<T> {
+interface GHFileContent {
+  content: string;
+  encoding: string;
+}
+
+async function proxyFetch(url: string, pat?: string): Promise<string> {
   const res = await fetch('/api/github-proxy', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url, pat: pat || null }),
   });
-  if (!res.ok) throw new Error(`GitHub ${res.status}: ${url}`);
-  const data = await res.json() as unknown;
-  if (!Array.isArray(data) && typeof data === 'object' && data !== null && 'message' in data) {
-    throw new Error(`GitHub API error: ${(data as { message: string }).message}`);
+  if (!res.ok) throw new Error(`Proxy ${res.status}: ${await res.text().then(t => t.slice(0, 200))}`);
+  return res.text();
+}
+
+async function ghFetch<T>(url: string, pat?: string): Promise<T> {
+  const text = await proxyFetch(url, pat);
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Non-JSON from proxy: ${text.slice(0, 300)}`);
+  }
+  if (data && typeof data === 'object' && '__proxy_error' in data) {
+    throw new Error(`Proxy: ${(data as { __proxy_error: string }).__proxy_error}`);
+  }
+  if (!Array.isArray(data)) {
+    throw new Error(`Expected array, got (${typeof data}): ${text.slice(0, 300)}`);
+  }
+  return data as T;
+}
+
+async function ghFetchObject<T>(url: string, pat?: string): Promise<T> {
+  const text = await proxyFetch(url, pat);
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Non-JSON from proxy: ${text.slice(0, 300)}`);
+  }
+  if (data && typeof data === 'object' && '__proxy_error' in data) {
+    throw new Error(`Proxy: ${(data as { __proxy_error: string }).__proxy_error}`);
   }
   return data as T;
 }
 
 function decodeBase64(encoded: string): string {
-  return atob(encoded.replace(/\n/g, ''));
+  const binary = atob(encoded.replace(/\n/g, ''));
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
 }
 
 function toDisplayName(folder: string): string {
@@ -56,14 +88,14 @@ async function fetchRepoItems(config: RepoConfig, pat?: string): Promise<Catalog
       );
 
       const artifacts: ArtifactFile[] = [];
-      let readmeContent: string | undefined;
+      let readmeEntry: GHEntry | undefined;
 
       for (const entry of entries) {
         if (entry.type !== 'file') continue;
         const lname = entry.name.toLowerCase();
 
-        if (lname === 'readme.md' && entry.content && entry.encoding === 'base64') {
-          readmeContent = decodeBase64(entry.content);
+        if (lname === 'readme.md') {
+          readmeEntry = entry;
         } else if (lname.endsWith('.workflow.json') && entry.download_url) {
           artifacts.push({ name: entry.name, type: 'workflow', downloadUrl: entry.download_url });
         } else if (lname.endsWith('.json') && entry.download_url) {
@@ -72,6 +104,21 @@ async function fetchRepoItems(config: RepoConfig, pat?: string): Promise<Catalog
       }
 
       if (artifacts.length === 0) return null;
+
+      let readmeContent: string | undefined;
+      if (readmeEntry) {
+        try {
+          const fileData = await ghFetchObject<GHFileContent>(
+            `${GH_API}/repos/${owner}/${repo}/contents/${readmeEntry.path}?ref=${branch}`,
+            pat
+          );
+          if (fileData.encoding === 'base64' && fileData.content) {
+            readmeContent = decodeBase64(fileData.content);
+          }
+        } catch {
+          // README unavailable — skip silently
+        }
+      }
 
       const item: CatalogItem = {
         folder: folder.name,

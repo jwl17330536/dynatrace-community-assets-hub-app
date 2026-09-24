@@ -62,7 +62,15 @@ export function ItemDetail() {
         </Text>
       </Flex>
 
-      <Surface style={{ padding: '20px', marginBottom: '24px' }}>
+      {item.readmeContent && (
+        <Surface style={{ padding: '24px', marginBottom: '24px' }}>
+          <div style={{ lineHeight: 1.65, fontSize: '14px' }}>
+            <ReactMarkdown>{item.readmeContent}</ReactMarkdown>
+          </div>
+        </Surface>
+      )}
+
+      <Surface style={{ padding: '20px' }}>
         <h2 style={{ marginTop: 0, fontSize: '16px' }}>Import Artifacts</h2>
         <Flex flexDirection="column" gap={12}>
           {dashboards.map(a => (
@@ -85,19 +93,6 @@ export function ItemDetail() {
           ))}
         </Flex>
       </Surface>
-
-      {item.readmeContent && (
-        <Surface style={{ padding: '24px' }}>
-          <div
-            style={{
-              lineHeight: 1.65,
-              fontSize: '14px',
-            }}
-          >
-            <ReactMarkdown>{item.readmeContent}</ReactMarkdown>
-          </div>
-        </Surface>
-      )}
     </div>
   );
 }

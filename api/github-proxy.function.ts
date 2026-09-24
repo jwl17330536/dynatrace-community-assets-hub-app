@@ -1,33 +1,44 @@
 const ALLOWED_HOSTS = ['api.github.com', 'raw.githubusercontent.com'];
 
-export default async function handler(request: Request): Promise<Response> {
+export default async function handler(payload: unknown): Promise<unknown> {
+  console.log('github-proxy invoked');
   try {
-    const { url: targetUrl, pat: token } = await request.json() as { url: string; pat?: string | null };
+    if (!payload || typeof payload !== 'object') {
+      return { __proxy_error: 'Invalid payload' };
+    }
+    const { url: targetUrl, pat: token } = payload as { url: string; pat?: string | null };
 
     let parsed: URL;
     try {
       parsed = new URL(targetUrl);
     } catch {
-      return new Response('Bad Request: invalid url parameter', { status: 400 });
+      return { __proxy_error: 'Bad Request: invalid url' };
     }
 
     if (!ALLOWED_HOSTS.includes(parsed.hostname)) {
-      return new Response('Forbidden: host not allowed', { status: 403 });
+      return { __proxy_error: 'Forbidden: host not allowed' };
     }
 
-    const fetchHeaders: HeadersInit = {
-      Accept: 'application/vnd.github.v3+json',
-      'User-Agent': 'DT-Community-Assets/1.0',
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'dt-community-assets',
     };
-    if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const ghRes = await fetch(targetUrl, { headers: fetchHeaders });
-    const body = await ghRes.text();
-    return new Response(body, {
-      status: ghRes.status,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.log('Fetching', targetUrl);
+    const ghRes = await fetch(targetUrl, { headers });
+    const text = await ghRes.text();
+    console.log('GitHub status', ghRes.status, 'body length', text.length);
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { __proxy_error: `Non-JSON (${ghRes.status}): ${text.slice(0, 200)}` };
+    }
   } catch (err) {
-    return new Response(`Proxy error: ${String(err)}`, { status: 502 });
+    const msg = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error('github-proxy failed', msg);
+    return { __proxy_error: msg };
   }
 }
