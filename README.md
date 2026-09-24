@@ -2,7 +2,9 @@
 
 A Dynatrace AppEngine app that browses public GitHub repositories for Dynatrace dashboards and workflows, and imports them into your tenant with a single click.
 
-![DT Community Assets catalog view](https://raw.githubusercontent.com/jwl17330536/dynatrace-community-assets-hub-app/main/docs/screenshot.png)
+![DT Community Assets catalog view](docs/screenshot-catalog.png)
+
+![DT Community Assets detail view](docs/screenshot-detail.png)
 
 ## Features
 
